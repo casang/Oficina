@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<head>
+  <title>JavaScript Evaluator</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta name="viewport" content="width = device-width" />
+  <style type="text/css">
+    h1 {
+      font-family: Helvetica;
+      font-size: 24px;
+    }
+    textarea {
+      font-family: Courier;
+      font-size: 14px;
+      width: 100%;
+      height: 100px;
+    }
+  </style>
+  <script language="JavaScript" src="evaluate.js"></script>
+  
+    <!-- This file and the JavaScript associated with it were adapted from the
+    Realtime JavaScript Evaluator at
+    http://www.teria.com/~koseki/memo/javascript/realtime_eval.html -->
+</head>
+
+<body>
+<h1>JavaScript Evaluator</h1>
+
+<form>
+  <textarea id="code" rows="10" cols="30" wrap="virtual">Math.sin(Math.PI/4)</textarea>
+  <br />
+  <input type="button" value="Eval" onClick="evalOnce();">
+  <br />
+  <textarea id="out" rows="10" cols="30" wrap="virtual"></textarea>
+</form>
+
+<p>Enter some JavaScript in the top box and tap the Eval button to see the result in the lower box.</p>
+
+</body>
+</html>

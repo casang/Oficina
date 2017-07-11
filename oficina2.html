@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+html {
+    -webkit-text-size-adjust: 100%;
+}
+p.serif {
+    font-family: "Times New Roman", Times, serif;
+    font-size: 32px;
+}
+
+p.sansserif {
+    font-family: "Arial", Helvetica, sans-serif;
+    font-size: 24px;
+}
+</style>
+</head>
+<body>
+<h1>Controle da SanBikes!</h1>
+<form action="http://192.168.0.177/">
+<p class="serif">Irrigacao:</p>
+<input type=checkbox name="I" value="01" checked>Grama Oficina
+<input type=checkbox name="I" value="02" checked>Grama Varanda
+<input type=checkbox name="I" value="03" checked>Lateral<br>
+  <select name="i">
+    <option value="00">Desliga</option>
+    <option value="01">Manual</option>
+    <option value="15">15min</option>
+    <option value="30">30min</option>
+    <option value="45">45min</option>
+    <option value="60">1h</option>
+  </select>
+  <input type="submit">
+<p class="sansserif">Iluminação:</p>
+</form>
+
+<p><b>Note:</b> The datalist tag is not supported in Safari or IE9 (and earlier).</p>
+
+</body>
+</html>
+<html>
+<font size="10">Controle da SanBikes!<br>
+Irrigacao:<br>
+<a href="http://192.168.0.177/?I2=00&I3=00&">Desliga</a><br>
+<a href="http://192.168.0.177/?I2=00&I3=01&">Grama 1</a><br>
+<a href="http://192.168.0.177/?I2=01&I3=00&">Grama 2</a><br>
+Luz:<br>
+<a href="http://192.168.0.177/?D1=00&D2=00&D3=00&D4=00&D5=00&">Desliga</a><br>
+<a href="http://192.168.0.177/?D1=05&D4=05&">Liga1</a><br>
+<a href="http://192.168.0.177/?D1=10&D4=10&">Liga2</a><br>
+<a href="http://192.168.0.177/?D1=13&D4=13&">Liga3</a><br>
+</font>
+</html>

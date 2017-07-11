@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+body {
+    background-color: lightblue;
+    font-size:50px;
+}
+
+h1 {
+    color: navy;
+    margin-left: 10px;
+}
+
+.button {
+    background-color: #4CAF50; /* Green */
+    border: none;
+    color: white;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 40px;
+}
+
+input[type=range] {
+  -webkit-appearance: none;
+  margin: 10px 0;
+  width: 50%;
+}
+input[type=range]:focus {
+  outline: none;
+}
+input[type=range]::-webkit-slider-runnable-track {
+  width: 50%;
+  height: 13px;
+  cursor: pointer;
+  animate: 0.2s;
+  box-shadow: 0px 0px 0px #000000;
+  background: blue;
+  border-radius: 25px;
+  border: 0px solid #000101;
+}
+input[type=range]::-webkit-slider-thumb {
+  box-shadow: 0px 0px 0px #000000;
+  border: 0px solid #000000;
+  height: 40px;
+  width: 40px;
+  border-radius: 7px;
+  background: black;
+  cursor: pointer;
+  -webkit-appearance: none;
+  margin-top: -12px;
+}
+input[type=range]:focus::-webkit-slider-runnable-track {
+  background: blue;
+}
+input[type=range]::-moz-range-track {
+  width: 100%;
+  height: 13px;
+  cursor: pointer;
+  animate: 0.2s;
+  box-shadow: 0px 0px 0px #000000;
+  background: blue;
+  border-radius: 25px;
+  border: 0px solid #000101;
+}
+input[type=range]::-moz-range-thumb {
+  box-shadow: 0px 0px 0px #000000;
+  border: 0px solid #000000;
+  height: 20px;
+  width: 39px;
+  border-radius: 7px;
+  background: black;
+  cursor: pointer;
+}
+input[type=range]::-ms-track {
+  width: 50%;
+  height: 13px;
+  cursor: pointer;
+  animate: 0.2s;
+  background: transparent;
+  border-color: transparent;
+  color: transparent;
+}
+input[type=range]::-ms-fill-lower {
+  background: blue;
+  border: 0px solid #000101;
+  border-radius: 50px;
+  box-shadow: 0px 0px 0px #000000;
+}
+input[type=range]::-ms-fill-upper {
+  background: blue;
+  border: 0px solid #000101;
+  border-radius: 50px;
+  box-shadow: 0px 0px 0px #000000;
+}
+input[type=range]::-ms-thumb {
+  box-shadow: 0px 0px 0px #000000;
+  border: 0px solid #000000;
+  height: 20px;
+  width: 39px;
+  border-radius: 7px;
+  background: black;
+  cursor: pointer;
+}
+input[type=range]:focus::-ms-fill-lower {
+  background: blue;
+}
+input[type=range]:focus::-ms-fill-upper {
+  background: blue;
+}
+</style>
+</head>
+<body>
+<h1>Irriga&ccedil;&atilde;o</h1>
+<button onclick="ligaIrrigacao(0, 0)" class="button">Desliga</button>
+<br>
+Geral: <input type="range" id="i0" value="15" min="10" max="30" oninput="myF('i0','li0')">
+<label id="li0"></label>
+<button onclick="ligaIrrigacao(0)" class="button">Ok</button><br>
+Lateral: <input type="range" id="i1" value="15" min="10" max="30" oninput="myF('i1','li1')">
+<label id="li1"></label>
+<button onclick="ligaIrrigacao(1)" class="button">Ok</button><br>
+Grama Oficina: <input type="range" id="i2" value="15" min="10" max="30" oninput="myF('i2','li2')">
+<label id="li2"></label>
+<button onclick="ligaIrrigacao(2)" class="button">Ok</button><br>
+Grama Varanda: <input type="range" id="i3" value="15" min="10" max="30" oninput="myF('i3','li3')">
+<label id="li3"></label>
+<button onclick="ligaIrrigacao(3)" class="button">Ok</button><br>
+Caixa: <input type="range" id="i4" value="15" min="10" max="30" oninput="myF('i4','li4')">
+<label id="li4"></label>
+<button onclick="ligaCaixa()" class="button">Ok</button><br>
+
+<script>
+
+myF ('i0', 'li0');
+myF ('i1', 'li1');
+myF ('i2', 'li2');
+myF ('i3', 'li3');
+myF ('i4', 'li4');
+
+var server="192.168.0.177";
+//var server="127.0.0.1";
+
+function myF(r, l) {
+    var x = document.getElementById(r).value;
+
+    document.getElementById(l).innerHTML = x;
+}
+
+function ligaIrrigacao (l, i)
+{
+    var url;
+    var x;
+
+    if (i != null)
+      x = i;
+    else
+      x = document.getElementById("i"+l).value;
+		url = "http://"+server+"/?i"+l+"="+n(x)+"&";
+	  window.location.assign(url);
+}
+
+function ligaCaixa ()
+{
+    var url;
+    var x;
+    
+    x = document.getElementById("i4").value;
+    url = "http://"+server+"/?b1="+n(x)+"&";
+    window.location.assign(url);
+}
+
+function n(n){
+    return n > 9 ? "" + n: "0" + n;
+}
+
+</script>
+
+</body>
+</html>
+

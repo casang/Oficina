@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<label id="lbrange" for="lbrange">Label1</label>
+Luminaria 1:<input type="range" id="d1" oninput="myF('d1','ld1')">
+
+<script>
+
+function myF(r, l) {
+    var x = document.getElementById(r).value;
+    document.getElementById("lbrange").innerHTML = x;
+    alert (x);
+    alert (document.getElementById("lbrange"));
+ }
+
+</script>
+
+</body>
+</html>
+
