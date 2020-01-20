@@ -2,9 +2,10 @@
 #define ILUMINACAO_H
 
 #define PINZEROCROSS 20
-#define PININFRARED  7
-#define PINDARK		 6 	
-#define PINMOVE	 52 
+#define PININFRARED  32
+#define PINMOVE	 	 34 
+#define PINDARK		 36 	
+
 void acLoadInt ();
 void zeroCrossInt ();
 
@@ -18,6 +19,7 @@ public:
   void loop ();
   void setIntensity (int intensity);
   int channel2Pos (int channel);
+  bool isOn ();
   int intensity2Time (int channel, int intensity);
 };
 #endif

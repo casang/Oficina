@@ -1,6 +1,7 @@
 #include "TimerOne.h"
 #include "arduino.h"
 #include "Interruptor.h"
+#include "Time.h"
 
 
 Interruptor::Interruptor (int pMove, int pDark, int pInfrared) 
@@ -9,103 +10,116 @@ Interruptor::Interruptor (int pMove, int pDark, int pInfrared)
   pinDark = pDark;
   pinInfrared = pInfrared;
 
-  stInterruptor = 0;  
-  stInterruptorLast = 0;
-  lastDebounceTime = 0;
-  lightLevel = 0;
-
 //definicao de tempos
-  debounceDelay = 100; // vezes 500u dá 50 ms
+  debounceDelayLow = 500; // vezes 500u
+  debounceDelayHigh = 10; // vezes 500u
   interruptorOffDelay = 4000; // 2s apertado é luz off
-  moveWindow = 10000; // 30 s de tempo quando há movimento
+  moveWindow = 60000; // 30 s de tempo quando há movimento
+  interruptorOffDelay = 4000; // tempo que evita sensor de move apos desligamento
 // fim def de tempos
 
   limiarDark = 600;
-  limiarInfrared = 200;
-  lastDebounceTime = 0;
-  maxLightLevels = 4;
-  lightLevel = 0;
-  tmOn = 0;
-  tmOff = 0;
-  tmMove = 0;
+  maxLightLevels = 5;
+
+  moveAction = 1; // inicia indicando que só deve acender por movimento quando está escuro
+  //moveAction = 2; // por enquando acende em qualquer horario
+  reset ();
 }
 
 void Interruptor::tmInterrupt()
 {
   int val;
   
-  // read the state of the switch into a local variable:
-  if (analogRead(pinInfrared) < limiarInfrared)
-  	val = 1; // acionado
-  else
-    val = 0; 
-
-  if (!lightLevel)
+// read the state of the switch into a local variable:
+  if (!digitalRead(pinInfrared))
   {
-  	if (tmOff + 1 <= interruptorOffDelay)
-  	{
-  	  tmOff++;
-  	  stInterruptor = val;
-  	  return; // se desligou espera 2 s para religar
-    }
+  	val = 1; // acionado
+    digitalWrite(13, HIGH);    
   }
+  else
+  {
+    val = 0; 
+    digitalWrite(13, LOW);
+  }
+
   // check to see if you just pressed the button 
   // (i.e. the input went from LOW to HIGH),  and you've waited 
   // long enough since the last press to ignore any noise:  
 
   // If the switch changed, due to noise or pressing:
-  if (val != stInterruptorLast) {
+  if (val != stInterruptor) 
     // reset the debouncing timer
     lastDebounceTime = 0;
-  } 
-  
-  if (lastDebounceTime++ > debounceDelay) {
+  else
+  {  
+    if (((val == 0) && (lastDebounceTime + 1 < debounceDelayLow)) ||
+        ((val == 1) && (lastDebounceTime + 1 < debounceDelayHigh)))
+      lastDebounceTime++;
+    else
+    {
     // whatever the reading is at, it's been there for longer
     // than the debounce delay, so take it as the actual current state:
-
-    // if the button state has changed:
-    if (val != stInterruptor) {
-      stInterruptor = val;
-      if (stInterruptor)
-        tmOn = 0;
-      else
+      if (val == 0)
+        stInterruptorLast = 1; // ficou tempo suficiente em 0
+      if ((val == 1) && (stInterruptorLast == 1))
       {
-        if (lightLevel == 0 or lightLevel == 1)
+        stInterruptorLast = 0;
+        lightLevel++;
+        if (lightLevel == 1)
+          lightLevel++;
+        if (lightLevel > maxLightLevels)
         {
-          // ou estava desligado ou estava apenas com sensor de movimento
-          lightLevel = 2;
+          lightLevel = 0; // desligou. Espera xx segundos antes que sensor de presença acione novamente
+          tmOff = interruptorOffDelay;       
         }
-        else if (lightLevel++ >= maxLightLevels)
-          lightLevel = 0;
-      }
-    }
-    
-    if (stInterruptor){
-      if (tmOn++ > interruptorOffDelay)
-      {
-        lightLevel = 0;
-        tmOff = 0;
       }
     }
   }
-  
   // save the reading.  Next time through the loop,
   // it'll be the lastButtonState:
-  stInterruptorLast = val;
+  stInterruptor = val;
 
   if (lightLevel > 1)
     return;
+  if (tmOff > 0)
+  {
+    tmOff--;
+    return;
+  }
 
+  //ainda sem LDR
+/*  
   if (analogRead(pinDark) < limiarDark) // durante o dia não considera sensor de presença
   {
     lightLevel = 0;
     return;
   }
-
-  if (digitalRead(pinMove))
+*/
+  if (!digitalRead(pinMove))
   {
-    lightLevel = 1; //acende por mais 30s
-    tmMove = moveWindow;
+    switch (moveAction)
+    {
+      case 0:
+        break; // não acende por movimento
+
+      case 1:
+        int hora;
+
+        if (timeStatus () == timeSet)
+        {
+          hora = hour ();
+          if (hora >= 7 && hora <= 16)
+            break;  // neste horário não acende por movimento  
+        }
+        lightLevel = 1; //acende por mais 30s
+        tmMove = moveWindow;
+        break;
+
+      case 2:
+        lightLevel = 1; //acende por mais 30s
+        tmMove = moveWindow;
+        break;
+    }
   }
   else
   {
@@ -115,10 +129,46 @@ void Interruptor::tmInterrupt()
         lightLevel = 0;
     }
   }
+/*
+  if (tmMove)
+    digitalWrite(13, HIGH);
+  else
+    digitalWrite(13, LOW);
+*/
+}
 
-  int getLightLevel ()
+int Interruptor::getLightLevel ()
+{
+  return lightLevel;
+}
+
+bool Interruptor::changed ()
+{
+  if (lastLightLevel != lightLevel)
   {
-    return lightLevel;
+    lastLightLevel = lightLevel;
+    return true;
   }
+  return false;
+}
+
+void Interruptor::setMoveAction (int act)
+{
+  moveAction = act;
+}
+
+void Interruptor::reset ()
+{
+  stInterruptor = 0;  
+  stInterruptorLast = 0;
+  lastDebounceTime = 0;
+  lightLevel = 0;
+  lastLightLevel = 0;
+  lastDebounceTime = 0;
+  lightLevel = 0;
+  lastLightLevel = 0;
+  tmOn = 0;
+  tmOff = 0;
+  tmMove = 0;  
 }
 

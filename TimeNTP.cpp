@@ -7,7 +7,7 @@
  
 //#define DEBUG
 
-#include <Time.h> 
+#include <TimeLib.h> 
 #include <Ethernet.h>
 #include <EthernetUdp.h>
 #include <SPI.h>

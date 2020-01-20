@@ -47,6 +47,7 @@ Dimmer::Dimmer (int pinZC, int pinAcL[], void (*zcIsr)(void), void (*acLdIsr) (v
       dimtimeSet[i] = 0;
     else
       dimtimeSet[i] = dimt[i];
+    bOn[i] = false;
     pinMode(pinAcLoad[i], OUTPUT);// Set AC Load pin as output
   }
   pinMode(pinZeroCross, INPUT);
@@ -59,18 +60,22 @@ void Dimmer::turnOff ()
   for (int i = 0; i < DIMMER_CHANNELS; i++){
     zeroCrossOn[i] = 0;
     digitalWrite(pinAcLoad[i], LOW);    // triac Off
+    bOn[i] = false;
   }
 }
 
-void Dimmer::setIntensity (int channel, int intensity)
+void Dimmer::setIntensity (int channel, int intensity, bool setOn)
 {
   switch (intensity)
   {
     case 0:
+      bOn[channel] = false;
       zeroCrossOn[channel] = 0;
       digitalWrite(pinAcLoad[channel], LOW);    // triac Off
       break;
     case 1:
+      if (setOn)
+        bOn[channel] = true;
       zeroCrossOn[channel] = 1;
       noInterrupts ();
       dimtimeSet[channel] = 0;
@@ -78,10 +83,17 @@ void Dimmer::setIntensity (int channel, int intensity)
       interrupts ();
       break;
     default:
+      if (setOn)
+        bOn[channel] = true;
       zeroCrossOn[channel] = 2;
       noInterrupts ();
       dimtimeSet[channel] = intensity;
       interrupts ();
       break;
   }
+}
+
+bool Dimmer::isOn (int channel)
+{
+  return bOn[channel];
 } 

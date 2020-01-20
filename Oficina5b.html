@@ -135,6 +135,11 @@ Luminaria 4:<input type="range" id="d4" min="0" max="10" oninput="myF('d4', 'ld4
 Luminaria 5:<input type="range" id="d5" min="0" max="10" oninput="myF('d5', 'ld5')">
 <label id="ld5"></label>
 <button onclick="ligaUmaLuz(5)" class="button">Ok</button><br>
+Movimento:
+<button onclick="move(0)" class="button">Off</button>
+<button onclick="move(1)" class="button">Noite</button>
+<button onclick="move(2)" class="button">On</button><br>
+<button onclick="status()" class="button">Status</button><br>
 <script>
 
 myF ('d0', 'ld0');
@@ -144,8 +149,8 @@ myF ('d3', 'ld3');
 myF ('d4', 'ld4');
 myF ('d5', 'ld5');
 
-var server="192.168.1.177";
-//var server="192.168.0.177";
+//var server="192.168.1.177";
+var server="192.168.0.177";
 //var server="127.0.0.1";
 
 function myF(r, l) {
@@ -174,6 +179,23 @@ function ligaUmaLuz (l, i)
     else
 		url = "http://"+server+"/?D"+l+"="+n(x)+"&";
 	window.location.assign(url);
+}
+
+function move(v)
+{
+  var url;
+    
+  url = "http://"+server+"/?";
+  url = url+"d0="+n(v)+"&";
+  window.location.assign(url);
+}
+
+function status()
+{
+  var url;
+    
+  url = "http://"+server+"/?S0=00";
+  window.location.assign(url);
 }
 
 function n(n){

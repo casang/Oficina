@@ -129,12 +129,12 @@ void loop ()
   Verify verify;
   static bool blink = false;
 
-  if (blink)
+ /* if (blink)
     digitalWrite(PINBLINK, HIGH);
   else
     digitalWrite(PINBLINK, LOW);
   blink = !blink;
-
+*/
   if (verify.check ())
   {  
     irrigacao->loop ();

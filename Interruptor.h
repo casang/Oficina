@@ -8,23 +8,28 @@ class Interruptor
   int pinInfrared;
   int stInterruptor;
   int stInterruptorLast;
-  int debounceDelay;
+  int debounceDelayLow;
+  int debounceDelayHigh;
   long lastDebounceTime;
   long interruptorOffDelay;
   int maxLightLevels;
   int lightLevel;
+  int lastLightLevel;
   int tmOn;
   int tmOff;
-  int tmMove;
+  long tmMove;
   long moveWindow;
   long limiarDark;
-  long limiarInfrared;
+  int moveAction;
 
 public:
 
   Interruptor (int pinMove, int pinDark, int pinInfrared);
   void tmInterrupt ();
   int getLightLevel ();
+  bool changed ();
+  void setMoveAction (int act);
+  void reset ();
 };
 
 

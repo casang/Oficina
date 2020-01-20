@@ -27,21 +27,80 @@ void Iluminacao::setIntensity (int intensity)
       dimmer->setIntensity (i, intensity);
     }
   }
+  if (!intensity)
+    interruptor->reset ();
+}
+
+bool Iluminacao::isOn ()
+{
+  for (int i = 0; i < DIMMER_CHANNELS; i++)
+  {
+    if (dimmer->isOn (i))
+      return true;
+  }
+  return false;
 }
 
 void Iluminacao::loop ()
 {
-  return; // por enquanto liga apenas por comando de rede
+  int c;
+
+  if (interruptor->changed ())
+  {
+    switch (interruptor->getLightLevel ())
+    {
+      case 1: // apenas o sensor de movimento
+        if (!isOn ())
+        {
+          dimmer->setIntensity (channel2Pos(4) - 1, iluminacao->intensity2Time (4, 7), false);
+          dimmer->setIntensity (channel2Pos(5) - 1, iluminacao->intensity2Time (5, 7), false);
+        }
+        break;
+      case 5:
+        for (int i = 1; i <= DIMMER_CHANNELS; i++)
+        {
+          c = iluminacao->channel2Pos(i);
+          iluminacao->dimmer->setIntensity (c - 1, iluminacao->intensity2Time (i, 4));
+        }
+        break;
+      case 4:
+        dimmer-> turnOff ();
+        c = iluminacao->channel2Pos(4);
+        iluminacao->dimmer->setIntensity (c - 1, iluminacao->intensity2Time (4, 7));
+        c = iluminacao->channel2Pos(5);
+        iluminacao->dimmer->setIntensity (c - 1, iluminacao->intensity2Time (5, 7));
+        break;
+      case 3:
+        dimmer-> turnOff ();
+        c = iluminacao->channel2Pos(4);
+        iluminacao->dimmer->setIntensity (c - 1, iluminacao->intensity2Time (4, 10));
+        c = iluminacao->channel2Pos(5);
+        iluminacao->dimmer->setIntensity (c - 1, iluminacao->intensity2Time (5, 10));
+        break;
+      case 2:
+        for (int i = 1; i <= DIMMER_CHANNELS; i++)
+        {
+          c = iluminacao->channel2Pos(i);
+          iluminacao->dimmer->setIntensity (c - 1, iluminacao->intensity2Time (i, 10));
+        }
+        break;
+      default:
+//        if (isOn ())
+        dimmer-> turnOff ();
+    }
+  }
 }
 
+// Fios ligados as lampadas (anilhas)
+// 1: preta
+// 2: Cinza
+// 3: Vermelho
+// 4: Verde
+// 5: Amarelo
 int Iluminacao::channel2Pos (int channel)
 {
-//teto-channel começando em 1-channel começando em 0/
-//1-5-4
-//2-2-1
-//3-3-2
-//4-1-0
-//5-4-3
+  return channel;
+/*  
   switch (channel)
   {
     case 1:
@@ -54,7 +113,7 @@ int Iluminacao::channel2Pos (int channel)
       return 1;
     case 5:
       return 4;
-  }
+  }*/
 }
 
 int Iluminacao::intensity2Time (int channel, int intensity)
