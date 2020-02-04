@@ -19,14 +19,16 @@ class Irrigacao
 	time_t nowLoop;
 	int canalOn;
 	int tempoIrrigacao[MAXCANAISIRRIGACAO + 1]; 
+	int tempoIrrigacaoSet[MAXCANAISIRRIGACAO + 1]; 
 	int tempoBomba;
 	void ligaBomba (bool liga, int canal);
 
 public:
 	Irrigacao ();
-	bool turnOn (int canal, int tempo = TEMPOIRRIGACAO);
-	void turnOff (int canal);
-	bool isOn (int canal);
+	bool setTimer (int canal, int tempo = TEMPOIRRIGACAO);
+	bool setState (int canal, bool state = false);
+	int getTimer (int canal);
+	bool getState (int canal);
 	void loop ();	
 };
 
