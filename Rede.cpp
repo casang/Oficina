@@ -1,8 +1,10 @@
+//#define DEBUG
+
 #include <arduino.h>
 #include <SPI.h>
 #include <Ethernet.h>
 #ifdef DEBUG
-#include <Serial.h>
+//#include <Serial.h>
 #endif
 #include "Rede.h"
 #include "Solenoide.h"
@@ -20,7 +22,6 @@ IPAddress ip(192,168,0,177);
 
 bool Rede::start ()
 {
-  sendStatus = false;
   Ethernet.begin(mac, ip);
   if (ip == Ethernet.localIP())
     active = true;
@@ -29,12 +30,12 @@ bool Rede::start ()
   if (active)
   {
     //Ethernet.begin (mac);
-    server = new EthernetServer (80);
+    server = new EthernetServer (8088);
     // start the Ethernet connection and the server:
     server->begin();
   #ifdef DEBUG
-    Serial.print("server is at ");
-    Serial.println(Ethernet.localIP());
+//    Serial.print("server is at ");
+//    Serial.println(Ethernet.localIP());
   #endif
     startNTP ();
   }
@@ -51,11 +52,192 @@ Rede::Rede ()
 }
 
 //012345
-//P1=12&
+//C1=12& onde C  é o comando, 1 o canal, 12 o valor
+//Comandos:
+//A: set dimmer intensity
+//B: set dimmer state
+//C: get dimmer intensity
+//D: get dimmer state
+//E: set movement sensor mode
+//H: set sprinkler time
+//I: set sprinkler state
+//J: get sprinkler time
+//K: get sprinkler state
+//
 
-void Rede::parseURL (char c, bool reset)
+void Rede::procCmd (char strResp[])
+{
+#ifdef DEBUG
+  Serial.print("Cmd=");
+  Serial.print(cmd);
+  Serial.print("channelCmd=");
+  Serial.print(channelCmd);
+  Serial.print("Value=");
+  Serial.println(valueCmd);
+#endif
+  switch (cmd)
+  {
+    case 'A':
+      if (iluminacao)
+      {
+        if (channelCmd >= 0 && channelCmd <= DIMMER_CHANNELS)
+        {
+          iluminacao->setIntensity (channelCmd, valueCmd);
+          if (strResp)
+            strcpy (strResp, "1");
+        }
+        if (!iluminacao->isOn () && iluminacao->interruptor)
+          iluminacao->interruptor->reset (); // se apagou tudo reset no interruptor
+      }
+      break;
+    case 'B':
+      if (iluminacao)
+      {
+        if (channelCmd >= 0 && channelCmd <= DIMMER_CHANNELS)
+        {
+          iluminacao->setState (channelCmd, valueCmd);
+          if (strResp)
+            strcpy (strResp, "1");
+        }
+        if (!iluminacao->isOn () && iluminacao->interruptor)
+          iluminacao->interruptor->reset (); // se apagou tudo reset no interruptor
+      }
+      break;
+    case 'C':
+      if (iluminacao)
+      {
+        if (channelCmd >= 0 && channelCmd <= DIMMER_CHANNELS)
+          if (channelCmd == 0)
+            sprintf (strResp, "C1=%03d&C2=%03d&C3=%03d&C4=%03d&C5=%03d", 
+              iluminacao->getIntensity (1),
+              iluminacao->getIntensity (2),
+              iluminacao->getIntensity (3),
+              iluminacao->getIntensity (4),
+              iluminacao->getIntensity (5));
+          else
+            sprintf (strResp, "C%d=%03d", 
+              channelCmd,  
+              iluminacao->getIntensity (channelCmd));
+      }
+      break;
+    case 'D':
+      if (iluminacao)
+      {
+        if (channelCmd >= 0 && channelCmd <= DIMMER_CHANNELS)
+          if (channelCmd == 0)
+            sprintf (strResp, "D1=%d&D2=%d&D3=%d&D4=%d&D5=%d", 
+              iluminacao->getState (1) ? 1 : 0,
+              iluminacao->getState (2) ? 1 : 0,
+              iluminacao->getState (3) ? 1 : 0,
+              iluminacao->getState (4) ? 1 : 0,
+              iluminacao->getState (5) ? 1 : 0);
+          else
+            sprintf (strResp, "D%d=%d", 
+              iluminacao->getState (channelCmd) ? "1" : "0");
+      }
+      break;
+    case 'E':
+      iluminacao->interruptor->setMoveAction (valueCmd);
+      if (strResp)
+        strcpy (strResp, "1");
+      break;
+    case 'H':
+      if (channelCmd >= 1 && channelCmd <= MAXCANAISIRRIGACAO)
+      {
+          if (irrigacao)
+          {
+            irrigacao->setTimer (channelCmd);
+            if (strResp)
+              strcpy (strResp, "1");
+          }
+      }
+      break;
+    case 'I':
+      if (channelCmd >= 1 && channelCmd <= MAXCANAISIRRIGACAO)
+      {
+          if (irrigacao)
+          {
+            irrigacao->setState (channelCmd);
+            if (strResp)
+              strcpy (strResp, "1");
+          }
+      }
+      break;
+    case 'J':
+      if (channelCmd >= 1 && channelCmd <= MAXCANAISIRRIGACAO)
+      {
+        sprintf (strResp, "%02d", irrigacao->getTimer (channelCmd));
+      }
+      break;
+    case 'K':
+      if (channelCmd >= 1 && channelCmd <= MAXCANAISIRRIGACAO)
+      {
+        if (irrigacao->getState (channelCmd))
+          strcpy (strResp, "1");
+        else
+          strcpy (strResp, "0");
+      }
+      break;
+  /*        case 'i':
+      if (channelCmd >= 1 && channelCmd <= MAXCANAISIRRIGACAO) // termino automatico
+      {
+        if (irrigacao)
+          irrigacao->turnOn (channelCmd, valueCmd * 60);
+        break;
+      }
+      if (channelCmd == 0) // liga todos, com desligamento automatico
+      {
+        if (irrigacao)
+        {
+          for (int i = 1; i < MAXCANAISIRRIGACAO + 1; i++)
+            irrigacao->turnOn (i, valueCmd * 60);
+          if (valueCmd == 0)
+            irrigacao->turnOn (0, 0);
+        }
+        break;
+      }
+      break;
+    case 'B':
+      if (channelCmd == 1)
+      {
+        switch (valueCmd)
+        {
+          case 0:
+            if (irrigacao)
+              irrigacao->turnOff (0);
+            break;
+          case 1:
+            if (irrigacao)
+              irrigacao->turnOn (0, -1);
+            break;
+        }
+      }
+      break;
+    case 'b':
+      if (channelCmd == 1) // termino automatico
+      {
+        if (irrigacao)
+          irrigacao->turnOn (0, valueCmd * 60);
+        break;
+      }
+      break;*/
+    case 'S':
+      if (timeStatus () == timeSet)
+      {
+        time_t t = now ();
+        sprintf (strResp, "%02d/%02d/%02d %02d:%02d:%02d",
+            day(t), month(t), year(t), hour(t), minute(t), second(t));
+      }  
+      break;
+    default:  //invalid parameter
+      return;
+  }
+}
+
+void Rede::parseURL (char c, char strResp[], bool reset)
 {
   static char inicio[] = "GET /?";  
+
   if (reset)
   {
     stateParseURL = 0;
@@ -76,7 +258,7 @@ void Rede::parseURL (char c, bool reset)
     case 1:
       cmd = c;
       stateParseURL++;
-      sendStatus = false;
+      strcpy (strResp, "-1"); //código de erro por default
       break;
 
     case 2:
@@ -90,6 +272,14 @@ void Rede::parseURL (char c, bool reset)
         stateParseURL++;
         break;
       }
+      else
+      {
+        procCmd (strResp);        
+        if (c == '&')
+        {
+          stateParseURL = 1;
+        }
+      }
       posStrLine = 0;
       stateParseURL = 0;
       break;
@@ -100,125 +290,33 @@ void Rede::parseURL (char c, bool reset)
       break;
 
     case 5:
-      valueCmd = valueCmd * 10 + (c - '0');
-      stateParseURL = 6;
-
-#ifdef DEBUG
-//      Serial.print("Cmd=");
-//      Serial.print(cmd);
-//      Serial.print("channelCmd=");
-//      Serial.print(channelCmd);
-//      Serial.print("Value=");
-//      Serial.println(valueCmd);
-#endif
-      switch (cmd)
-      {
-        case 'D':
-          if (iluminacao && iluminacao->dimmer)
-          {
-            int c;
-            if (channelCmd >= 1 && channelCmd <= DIMMER_CHANNELS)
-            {
-              c = iluminacao->channel2Pos(channelCmd);
-              iluminacao->dimmer->setIntensity (c - 1, iluminacao->intensity2Time (channelCmd, valueCmd));
-            }
-            if (channelCmd == 0)
-            {
-              for (int i = 1; i <= DIMMER_CHANNELS; i++)
-              {
-                c = iluminacao->channel2Pos(i);
-                iluminacao->dimmer->setIntensity (c - 1, iluminacao->intensity2Time (i, valueCmd));
-              }
-            }
-            if (!iluminacao->isOn ())
-              iluminacao->interruptor->reset (); // se apagou tudo reset no interruptor
-          }
-          break;
-        case 'd':
-          iluminacao->interruptor->setMoveAction (valueCmd);
-          break;
-        case 'I':
-          if (channelCmd >= 1 && channelCmd <= MAXCANAISIRRIGACAO)
-          {
-            switch (valueCmd)
-            {
-              case 0:
-                if (irrigacao)
-                  irrigacao->turnOff (channelCmd);
-                break;
-              case 1:
-                if (irrigacao)
-                  irrigacao->turnOn (channelCmd, -1);
-                break;
-            }
-          }
-          break;
-        case 'i':
-          if (channelCmd >= 1 && channelCmd <= MAXCANAISIRRIGACAO) // termino automatico
-          {
-            if (irrigacao)
-              irrigacao->turnOn (channelCmd, valueCmd * 60);
-            break;
-          }
-          if (channelCmd == 0) // liga todos, com desligamento automatico
-          {
-            if (irrigacao)
-            {
-              for (int i = 1; i < MAXCANAISIRRIGACAO + 1; i++)
-                irrigacao->turnOn (i, valueCmd * 60);
-              if (valueCmd == 0)
-                irrigacao->turnOn (0, 0);
-            }
-            break;
-          }
-          break;
-        case 'B':
-          if (channelCmd == 1)
-          {
-            switch (valueCmd)
-            {
-              case 0:
-                if (irrigacao)
-                  irrigacao->turnOff (0);
-                break;
-              case 1:
-                if (irrigacao)
-                  irrigacao->turnOn (0, -1);
-                break;
-            }
-          }
-          break;
-        case 'b':
-          if (channelCmd == 1) // termino automatico
-          {
-            if (irrigacao)
-              irrigacao->turnOn (0, valueCmd * 60);
-            break;
-          }
-          break;
-        case 'S':
-          sendStatus = true;
-          break;
-        default:  //invalid parameter
-          return;
-      }
-      break;
-
     case 6:
-      if (c == '&')
+      if ((c >= '0') && (c <= '9'))
       {
-        stateParseURL = 1;
-        break;
+        valueCmd = valueCmd * 10 + (c - '0');
+        stateParseURL++;
       }
-      posStrLine = 0;
-      stateParseURL = 0;
-      break;
+      else
+      {
+        if (c == '&')
+        {
+          stateParseURL = 1;
+        }
+        else
+        {
+          posStrLine = 0;
+          stateParseURL = 0;
+        }
+      }
+
+      procCmd (strResp);
   }
 }
 
 void Rede::loop() 
 {
   static int cont = 0;
+  char strResp[100];
 
   if (!active)
   {
@@ -252,101 +350,65 @@ void Rede::loop()
   EthernetClient client = server->available();
   if (client) {
 #ifdef DEBUG
-    Serial.println("new client");
+//    Serial.println("new client");
 #endif
     // an http request ends with a blank line
     int state = 0;
     tOut = 0;
-    parseURL (' ', true);
+    parseURL (' ', strResp, true);
     while (client.connected()) 
     {
       if (tOut++ > 10)
         break;  // muito tempo connected sem caracter available
 #ifdef DEBUG
-Serial.print ("-");
+//Serial.print ("-");
 #endif
       if (client.available()) 
       {
         tOut = 0;
         char c = client.read();
 #ifdef DEBUG
-        Serial.write(c);
+//        Serial.write(c);
 #endif
         switch (state)
         {
           case 0:
+            parseURL (c, strResp);
             if (c == '\n')
             {
               state = 1;
-              break;
             }
-            parseURL (c);
             break;
 
           case 1:
             if ((c != '\r') && (c != '\n'))
             {
               state = 0;
-              parseURL (c, true);
+              parseURL (c, strResp, true);
               break;
             }
             if (c == '\n')
             {
               state = 2;
               // send a standard http response header
-              client.println("HTTP/1.1 200 OK");
-              client.println("Content-Type: text/html");
-              client.println("Connection: close");  // the connection will be closed after completion of the response
+              //client.println("HTTP/1.1 200 OK");
+              //client.println("Content-Type: text/html");
+              //client.println("Connection: close");  // the connection will be closed after completion of the response
     //          client.println("Refresh: 5");  // refresh the page automatically every 5 sec
-              client.println();
-              client.println("<!DOCTYPE HTML>");
-              client.println("<html>");
-              if (!sendStatus)
-              {
-                client.println("<script>");
-                client.println("history.go(-1);");
-                client.println("</script>");
-              }
-              else
-              {
-                client.print("Date Time:");
-                if (timeStatus () != timeSet)
-                  client.print ("Indefinido");
-                else
-                {
-                  time_t t = now ();
-                  client.print("now:");
-                  client.print(t);
-                  client.print("-");
-                  client.print(day(t));
-                  client.print("/");
-                  client.print(month(t));
-                  client.print("/");
-                  client.print(year(t));
-                  client.print(" ");
-                  client.print(hour(t));
-                  client.print(" ");
-                  client.print(minute(t));
-                  client.print(" ");
-                  client.print(second(t));
-                  client.println("<br>");     
-                }  
-              }    
-              // output the value of each analog input pin
-              //for (int i = 0; i < MAXCANAISIRRIGACAO + 1; i++) {
-                //client.print("I");
-                //client.print(i + 1);
-                //client.print("=");
-                //if (irrigacao)
-                  //client.print(irrigacao->isOn (i));
-                //else
-                  //client.print("NULL");
-
-                //client.println("<br />");       
-              //}
-              client.println("</html>");
+              //client.println();
+              //client.println("<!DOCTYPE HTML>");
+              //client.println("<html>");
+              //client.println("cmd=");
+              //client.println(cmd);
+              //client.println("channelCmd=");
+              //client.println(channelCmd);
+              //client.println("valueCmd=");
+              //client.println(valueCmd);
+              client.println(strResp);     
+              //client.println("</html>");
               break;
             }
+            break;
         }
       }
     }
