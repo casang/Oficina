@@ -9,6 +9,7 @@
 void Dimmer::acLoadInterrupt()
 {
   //  digitalWrite( 13, digitalRead( 13 ) ^ 1 );
+  // canal 0 não tem dispositivo físico
   for (int i = 0; i < DIMMER_CHANNELS; i++)
   {
     if ((zeroCrossOn[i] > 1) && dimtime[i])
@@ -26,7 +27,7 @@ void Dimmer::acLoadInterrupt()
 void Dimmer::zeroCrossInterrupt()  // function to be fired at the zero crossing to dim the light
 {
   noInterrupts ();
-  for (int i = 0; i < DIMMER_CHANNELS; i++)
+  for (int i = 1; i < DIMMER_CHANNELS; i++)
   {
     if (zeroCrossOn[i] > 1)
       dimtime[i] = dimtimeSet[i];
@@ -47,7 +48,6 @@ Dimmer::Dimmer (int pinZC, int pinAcL[], void (*zcIsr)(void), void (*acLdIsr) (v
       dimtimeSet[i] = 0;
     else
       dimtimeSet[i] = dimt[i];
-    bOn[i] = false;
     pinMode(pinAcLoad[i], OUTPUT);// Set AC Load pin as output
   }
   pinMode(pinZeroCross, INPUT);
@@ -55,27 +55,15 @@ Dimmer::Dimmer (int pinZC, int pinAcL[], void (*zcIsr)(void), void (*acLdIsr) (v
   attachInterrupt(digitalPinToInterrupt (pinZeroCross), zeroCrossIsr, RISING);  // Choose the zero cross interrupt # from the table above
 }
 
-void Dimmer::turnOff ()
-{
-  for (int i = 0; i < DIMMER_CHANNELS; i++){
-    zeroCrossOn[i] = 0;
-    digitalWrite(pinAcLoad[i], LOW);    // triac Off
-    bOn[i] = false;
-  }
-}
-
-void Dimmer::setIntensity (int channel, int intensity, bool setOn)
+void Dimmer::setIntensity (int channel, int intensity)
 {
   switch (intensity)
   {
     case 0:
-      bOn[channel] = false;
       zeroCrossOn[channel] = 0;
       digitalWrite(pinAcLoad[channel], LOW);    // triac Off
       break;
     case 1:
-      if (setOn)
-        bOn[channel] = true;
       zeroCrossOn[channel] = 1;
       noInterrupts ();
       dimtimeSet[channel] = 0;
@@ -83,8 +71,6 @@ void Dimmer::setIntensity (int channel, int intensity, bool setOn)
       interrupts ();
       break;
     default:
-      if (setOn)
-        bOn[channel] = true;
       zeroCrossOn[channel] = 2;
       noInterrupts ();
       dimtimeSet[channel] = intensity;
@@ -92,8 +78,3 @@ void Dimmer::setIntensity (int channel, int intensity, bool setOn)
       break;
   }
 }
-
-bool Dimmer::isOn (int channel)
-{
-  return bOn[channel];
-} 
