@@ -20,13 +20,13 @@ class Rede
   int estadoNTP;
   int NTPTimer;
   int NTPTimeOut;
-  bool sendStatus;
 
 public:
   Rede ();
   void loop ();
   bool start ();
-  void parseURL (char c, bool reset = false);
+  void parseURL (char c, char strResp[], bool reset = false);
+  void procCmd (char strResp[]);
   void getNTP ();
   void startNTP ();
   void sendNTPpacket(IPAddress& address);
