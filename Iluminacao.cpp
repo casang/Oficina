@@ -5,40 +5,86 @@
 #include "Interruptor.h"
 #include "Iluminacao.h"
 
-int pinAcLoad[] = {22, 24, 26, 28, 30};
+int pinAcLoad[] = {22, 24, 26, 28, 30}; 
 
 Iluminacao::Iluminacao ()
 {
   dimmer = new Dimmer (PINZEROCROSS, pinAcLoad, &zeroCrossInt, &acLoadInt, NULL);
   interruptor = new Interruptor (PINMOVE, PINDARK, PININFRARED);
-}
-
-void Iluminacao::setIntensity (int intensity)
-{
-  for (int i = 0; i < DIMMER_CHANNELS; i++)
+  for (int i = 0; i <= DIMMER_CHANNELS; i++)
   {
-    if (!intensity)
-      dimmer->turnOff ();
-    else
-    {
-#ifdef DEBUG
-      Serial.print (intensity);
-#endif
-      dimmer->setIntensity (i, intensity);
-    }
+    iIntensity[i] = 0;
+    bOn[i] = 0;
   }
-  if (!intensity)
-    interruptor->reset ();
 }
 
 bool Iluminacao::isOn ()
 {
-  for (int i = 0; i < DIMMER_CHANNELS; i++)
-  {
-    if (dimmer->isOn (i))
+  for (int i = 1; i <= DIMMER_CHANNELS; i++)
+    if (bOn[i])
       return true;
-  }
   return false;
+}
+
+bool Iluminacao::getState (int channel)
+{
+  return bOn[channel];
+}
+
+int Iluminacao::getIntensity (int channel)
+{
+  return iIntensity[channel];
+}
+
+void Iluminacao::setState (int channel, int state)
+{
+  int c = channel;
+
+  if (c >= 1)
+  {
+    bOn[c] = state;
+    if (bOn[c])
+      dimmer->setIntensity (c - 1, intensity2Time (c, iIntensity[c]));
+    else
+      dimmer->setIntensity (c - 1, intensity2Time (c, 0));
+  }
+  else
+    for (c = 0; c <= DIMMER_CHANNELS; c++)
+    {
+      bOn[c] = state;
+      if (bOn[c])
+        dimmer->setIntensity (c - 1, intensity2Time (c, iIntensity[c]));
+      else
+        dimmer->setIntensity (c - 1, intensity2Time (c, 0));
+    }
+}
+
+void Iluminacao::setIntensity (int channel, int intensity)
+{
+  int c = channel;
+
+  if (c >= 1)
+  {
+    iIntensity[c] = intensity;
+    if (intensity == 0)
+      bOn[c] = 0;
+    else
+      bOn[c] = true;
+    dimmer->setIntensity (c - 1, intensity2Time (c, intensity));
+  }
+  else
+  {
+    for (c = 0; c <= DIMMER_CHANNELS; c++)
+    {
+      iIntensity[c] = intensity;
+      if (intensity == 0)
+        bOn[c] = 0;
+      else
+        bOn[c] = true;
+      if (c > 0)
+        dimmer->setIntensity (c - 1, intensity2Time (c, intensity));
+    }
+  }
 }
 
 void Iluminacao::loop ()
@@ -47,46 +93,49 @@ void Iluminacao::loop ()
 
   if (interruptor->changed ())
   {
+    Serial.print("int:");
+    Serial.print(interruptor->getLightLevel ());
     switch (interruptor->getLightLevel ())
     {
       case 1: // apenas o sensor de movimento
         if (!isOn ())
         {
-          dimmer->setIntensity (channel2Pos(4) - 1, iluminacao->intensity2Time (4, 7), false);
-          dimmer->setIntensity (channel2Pos(5) - 1, iluminacao->intensity2Time (5, 7), false);
+          setIntensity (channel2Pos(4), 70);
+          setIntensity (channel2Pos(5), 70);
         }
         break;
       case 5:
         for (int i = 1; i <= DIMMER_CHANNELS; i++)
         {
-          c = iluminacao->channel2Pos(i);
-          iluminacao->dimmer->setIntensity (c - 1, iluminacao->intensity2Time (i, 4));
+          c = channel2Pos(i);
+          setIntensity (c, 40);
         }
         break;
       case 4:
-        dimmer-> turnOff ();
-        c = iluminacao->channel2Pos(4);
-        iluminacao->dimmer->setIntensity (c - 1, iluminacao->intensity2Time (4, 7));
-        c = iluminacao->channel2Pos(5);
-        iluminacao->dimmer->setIntensity (c - 1, iluminacao->intensity2Time (5, 7));
+        setIntensity (0, 0);
+        c = channel2Pos(4);
+        setIntensity (c, 70);
+        c = channel2Pos(5);
+        setIntensity (c, 70);
         break;
       case 3:
-        dimmer-> turnOff ();
-        c = iluminacao->channel2Pos(4);
-        iluminacao->dimmer->setIntensity (c - 1, iluminacao->intensity2Time (4, 10));
-        c = iluminacao->channel2Pos(5);
-        iluminacao->dimmer->setIntensity (c - 1, iluminacao->intensity2Time (5, 10));
+        setIntensity (0, 0);
+        c = channel2Pos(4);
+        setIntensity (c, 100);
+        c = channel2Pos(5);
+        setIntensity (c, 100);
         break;
       case 2:
         for (int i = 1; i <= DIMMER_CHANNELS; i++)
         {
-          c = iluminacao->channel2Pos(i);
-          iluminacao->dimmer->setIntensity (c - 1, iluminacao->intensity2Time (i, 10));
+          c = channel2Pos(i);
+          setIntensity (c, 100);
         }
         break;
       default:
-//        if (isOn ())
-        dimmer-> turnOff ();
+//       if (isOn ())
+       setIntensity (0, 0);
+       break;
     }
   }
 }
@@ -123,7 +172,7 @@ int Iluminacao::intensity2Time (int channel, int intensity)
     case 1:
     case 2:
     case 3: // lampadas não dimerizaveis
-      if (intensity < 5)
+      if (intensity < 50)
         return 0; // desliga
       else
         return 1; // liga
@@ -131,9 +180,9 @@ int Iluminacao::intensity2Time (int channel, int intensity)
     case 5:
       if (intensity == 0)
         return 0;
-      if (intensity == 10)
+      if (intensity == 100)
         return 1;
-      return 14 - intensity;
+      return 14 - (intensity / 10);
   }
 }
 
