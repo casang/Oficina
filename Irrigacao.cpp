@@ -51,22 +51,31 @@ void Irrigacao::ligaBomba (bool liga, int canal)
 	}		
 }
 
-bool Irrigacao::turnOn (int canal, int tempo)
+bool Irrigacao::setState (int canal, bool state)
 {
 	if (sensorPoco->level () == 0) // tem que ter minima H2O no poço
 		return false;
-	tempoIrrigacao[canal] = tempo;
+	if (state)
+		tempoIrrigacao[canal] = tempoIrrigacaoSet[canal];
+	else
+		tempoIrrigacao[canal] = 0;
 	return true;
 }
 
-void Irrigacao::turnOff (int canal)
-{
-	tempoIrrigacao[canal] = 0;
-}
-
-bool Irrigacao::isOn (int canal)
+bool Irrigacao::getState (int canal)
 {
 	return (solIrrigacao[canal]->isOn ());
+}
+
+bool Irrigacao::setTimer (int canal, int Tempo)
+{
+	tempoIrrigacaoSet[canal] = Tempo;
+	setState (true);
+}
+
+int Irrigacao::getTimer (int canal)
+{
+	return (tempoIrrigacao[canal]);
 }
 
 void Irrigacao::loop ()
