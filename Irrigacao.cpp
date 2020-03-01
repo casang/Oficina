@@ -16,10 +16,11 @@ Irrigacao::Irrigacao ()
 	pinMode (PINBOMBA2, OUTPUT);
  
 	canalOn = -1; // nada ligado
-    for (int i = 0; i < MAXCANAISIRRIGACAO + 1; i++)
+    for (int i = 0; i <= MAXCANAISIRRIGACAO; i++)
     {
 		ligaBomba (false, i);
 		tempoIrrigacao[i] = 0;
+		tempoIrrigacaoSet[i] = 0;
 	}
 	tempoBomba = 0;
 	nowLoop = now ();
@@ -51,6 +52,8 @@ void Irrigacao::ligaBomba (bool liga, int canal)
 	}		
 }
 
+#define DEBUG
+
 bool Irrigacao::setState (int canal, bool state)
 {
 	if (sensorPoco->level () == 0) // tem que ter minima H2O no poço
@@ -70,7 +73,7 @@ bool Irrigacao::getState (int canal)
 bool Irrigacao::setTimer (int canal, int Tempo)
 {
 	tempoIrrigacaoSet[canal] = Tempo;
-	setState (true);
+	//setState (canal, true);
 }
 
 int Irrigacao::getTimer (int canal)
@@ -80,17 +83,26 @@ int Irrigacao::getTimer (int canal)
 
 void Irrigacao::loop ()
 {
-	int deltaT = now () - nowLoop; // verifica quantos segundos passou entre a ultima entrada no loop
+	unsigned int deltaT = now () - nowLoop; // verifica quantos segundos passou entre a ultima entrada no loop
 
 	nowLoop = now ();
 
+	if (deltaT > 10)
+		return;			// now deve estar errado pois deve passar aqui a cada 1s em média
 #ifdef DEBUG
 Serial.print ("CanalOn=");
 Serial.println (canalOn);
-for (int i = 0; i < MAXCANAISIRRIGACAO; i++)
+for (int i = 0; i <= MAXCANAISIRRIGACAO; i++)
 {
-	Serial.println (tempoIrrigacao[i]);
+	Serial.print (tempoIrrigacao[i]);
+	Serial.print ("-");
+	Serial.print (tempoIrrigacaoSet[i]);	
+	Serial.print ("-");
 }
+Serial.print ("-TB:");
+Serial.print (tempoBomba);
+Serial.print ("-DT:");
+Serial.print (deltaT);
 #endif
 
 	if (canalOn >= 0)
