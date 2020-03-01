@@ -24,6 +24,7 @@ class Rede
 public:
   Rede ();
   void loop ();
+  void ntpLoop ();
   bool start ();
   void parseURL (char c, char strResp[], bool reset = false);
   void procCmd (char strResp[]);
