@@ -21,12 +21,14 @@ class Interruptor
   long moveWindow;
   long limiarDark;
   int moveAction;
+  bool autoTO;
 
 public:
 
   Interruptor (int pinMove, int pinDark, int pinInfrared);
   void tmInterrupt ();
   int getLightLevel ();
+  void autoTurnOff (bool valor);
   bool changed ();
   void setMoveAction (int act);
   void reset ();
