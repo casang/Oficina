@@ -1,3 +1,4 @@
+
 #include "TimerOne.h"
 #include "arduino.h"
 #include "Interruptor.h"
@@ -112,12 +113,14 @@ void Interruptor::tmInterrupt()
             break;  // neste horário não acende por movimento  
         }
         lightLevel = 1; //acende por mais 30s
-        tmMove = moveWindow;
+        if (autoTO)
+          tmMove = moveWindow;
         break;
 
       case 2:
         lightLevel = 1; //acende por mais 30s
-        tmMove = moveWindow;
+        if (autoTO)
+          tmMove = moveWindow;
         break;
     }
   }
@@ -140,6 +143,22 @@ void Interruptor::tmInterrupt()
 int Interruptor::getLightLevel ()
 {
   return lightLevel;
+}
+
+void Interruptor::autoTurnOff (bool valor)
+{
+  // usado para ajustar quando o comando de acender nao vem pelo inerruptor
+  // neste caso não deve apagar automatico
+  if (!valor)
+  {
+    tmOff = 0;
+    tmMove = 0;
+    lastLightLevel = -1; // proxima vez que acionar o interruptor vai para o primeiro nivel (estado 2)
+    lightLevel = 1;
+  }
+  autoTO = valor;
+  if (autoTO)
+    tmMove = moveWindow;
 }
 
 bool Interruptor::changed ()
@@ -170,5 +189,6 @@ void Interruptor::reset ()
   tmOn = 0;
   tmOff = 0;
   tmMove = 0;  
+  autoTO = 0;
 }
 
