@@ -128,20 +128,24 @@ void loop ()
 {
   Verify verify;
   static bool blink = false;
+  static unsigned long t1s = 0;
+  static unsigned long t200m = 0;
 
- /* if (blink)
-    digitalWrite(PINBLINK, HIGH);
-  else
-    digitalWrite(PINBLINK, LOW);
-  blink = !blink;
-*/
-  if (verify.check ())
-  {  
-    irrigacao->loop ();
+  if (millis() >= t1s + 1000)
+  {
+    t1s = millis ();
+    // loop de 1 segundo
+    if (verify.check ())
+    {  
+      irrigacao->loop ();
+    }
+    iluminacao->loop ();
+    rede->ntpLoop ();
   }
-  iluminacao->loop ();
-  rede->loop ();
-  //ntp->loop ();
+  if (millis() >= t200m + 200)
+  {
+    t200m = millis ();
+    rede->loop ();
+  }
   //loopDHT11 ();
-  delay(1000);
 }
