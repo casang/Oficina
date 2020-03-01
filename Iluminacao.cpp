@@ -87,39 +87,47 @@ void Iluminacao::setIntensity (int channel, int intensity)
   }
 }
 
+#define DEBUG
+
 void Iluminacao::loop ()
 {
   int c;
 
   if (interruptor->changed ())
   {
+#ifdef DEBUG
     Serial.print("int:");
     Serial.print(interruptor->getLightLevel ());
+#endif
     switch (interruptor->getLightLevel ())
     {
       case 1: // apenas o sensor de movimento
         if (!isOn ())
         {
-          setIntensity (channel2Pos(4), 70);
-          setIntensity (channel2Pos(5), 70);
+          setState (0, 0);
+          c = channel2Pos(4);
+          setIntensity (c, 70);
+          c = channel2Pos(5);
+          setIntensity (c, 70);
+          interruptor->autoTurnOff (true);
         }
         break;
       case 5:
-        for (int i = 1; i <= DIMMER_CHANNELS; i++)
-        {
-          c = channel2Pos(i);
-          setIntensity (c, 40);
-        }
+        setState (0, 0);
+        c = channel2Pos(4);
+        setIntensity (c, 40);
+        c = channel2Pos(5);
+        setIntensity (c, 40);
         break;
       case 4:
-        setIntensity (0, 0);
+        setState (0, 0);
         c = channel2Pos(4);
         setIntensity (c, 70);
         c = channel2Pos(5);
         setIntensity (c, 70);
         break;
       case 3:
-        setIntensity (0, 0);
+        setState (0, 0);
         c = channel2Pos(4);
         setIntensity (c, 100);
         c = channel2Pos(5);
@@ -134,7 +142,7 @@ void Iluminacao::loop ()
         break;
       default:
 //       if (isOn ())
-       setIntensity (0, 0);
+       setState (0, 0);
        break;
     }
   }
