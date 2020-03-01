@@ -17,8 +17,8 @@
 // Enter a MAC address and IP address for your controller below.
 // The IP address will be dependent on your local network:
 unsigned char mac[] = {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED};
-//IPAddress ip(192,168,1,177);
-IPAddress ip(192,168,0,177);
+IPAddress ip(192,168,1,177);
+//IPAddress ip(192,168,0,177);
 
 bool Rede::start ()
 {
@@ -86,6 +86,7 @@ void Rede::procCmd (char strResp[])
           if (strResp)
             strcpy (strResp, "1");
         }
+        iluminacao->interruptor->autoTurnOff (false);
         if (!iluminacao->isOn () && iluminacao->interruptor)
           iluminacao->interruptor->reset (); // se apagou tudo reset no interruptor
       }
@@ -99,6 +100,7 @@ void Rede::procCmd (char strResp[])
           if (strResp)
             strcpy (strResp, "1");
         }
+        iluminacao->interruptor->autoTurnOff (false);
         if (!iluminacao->isOn () && iluminacao->interruptor)
           iluminacao->interruptor->reset (); // se apagou tudo reset no interruptor
       }
@@ -146,7 +148,7 @@ void Rede::procCmd (char strResp[])
       {
           if (irrigacao)
           {
-            irrigacao->setTimer (channelCmd);
+            irrigacao->setTimer (channelCmd, valueCmd);
             if (strResp)
               strcpy (strResp, "1");
           }
@@ -157,25 +159,36 @@ void Rede::procCmd (char strResp[])
       {
           if (irrigacao)
           {
-            irrigacao->setState (channelCmd);
+            irrigacao->setState (channelCmd, valueCmd);
             if (strResp)
               strcpy (strResp, "1");
           }
       }
       break;
     case 'J':
-      if (channelCmd >= 1 && channelCmd <= MAXCANAISIRRIGACAO)
+      if (channelCmd >= 0 && channelCmd <= MAXCANAISIRRIGACAO)
       {
-        sprintf (strResp, "%02d", irrigacao->getTimer (channelCmd));
+        if (channelCmd == 0)
+          sprintf (strResp, "J1=%03d&J2=%03d&J3=%03d", 
+              irrigacao->getTimer (1),
+              irrigacao->getTimer (2),
+              irrigacao->getTimer (3));
+        else
+          sprintf (strResp, "J%d=%03d", 
+              channelCmd, irrigacao->getTimer (channelCmd));
       }
       break;
     case 'K':
-      if (channelCmd >= 1 && channelCmd <= MAXCANAISIRRIGACAO)
+      if (channelCmd >= 0 && channelCmd <= MAXCANAISIRRIGACAO)
       {
-        if (irrigacao->getState (channelCmd))
-          strcpy (strResp, "1");
+        if (channelCmd == 0)
+          sprintf (strResp, "K1=%d&K2=%d&K3=%d", 
+              irrigacao->getState (1) ? 1 : 0,
+              irrigacao->getState (2) ? 1 : 0,
+              irrigacao->getState (3) ? 1 : 0);
         else
-          strcpy (strResp, "0");
+          sprintf (strResp, "K%d=%d", 
+              channelCmd, irrigacao->getState (channelCmd) ? "1" : "0");
       }
       break;
   /*        case 'i':
@@ -313,10 +326,9 @@ void Rede::parseURL (char c, char strResp[], bool reset)
   }
 }
 
-void Rede::loop() 
+void Rede::ntpLoop ()
 {
   static int cont = 0;
-  char strResp[100];
 
   if (!active)
   {
@@ -344,6 +356,20 @@ void Rede::loop()
 
   if (estadoNTP > 0)
     getNTP ();
+}
+
+#define DEBUG1
+
+void Rede::loop() 
+{
+  static int cont = 0;
+  char strResp[100];
+
+  if (!active)
+  {
+    if (!start ())
+      return;
+  }
 
   int tOut = 0;
   // listen for incoming clients
@@ -404,7 +430,11 @@ void Rede::loop()
               //client.println(channelCmd);
               //client.println("valueCmd=");
               //client.println(valueCmd);
-              client.println(strResp);     
+              client.println(strResp);
+#ifdef DEBUG1
+              Serial.print(strResp);
+#endif              
+              ////client.println("teste");     
               //client.println("</html>");
               break;
             }
