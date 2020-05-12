@@ -3,7 +3,7 @@
 #include <arduino.h>
 #include <SPI.h>
 #include <Ethernet.h>
-#ifdef DEBUG
+#ifdef DEBUG_REDE
 //#include <Serial.h>
 #endif
 #include "Rede.h"
@@ -33,7 +33,7 @@ bool Rede::start ()
     server = new EthernetServer (8088);
     // start the Ethernet connection and the server:
     server->begin();
-  #ifdef DEBUG
+  #ifdef DEBUG_REDE
 //    Serial.print("server is at ");
 //    Serial.println(Ethernet.localIP());
   #endif
@@ -67,7 +67,7 @@ Rede::Rede ()
 
 void Rede::procCmd (char strResp[])
 {
-#ifdef DEBUG
+#ifdef DEBUG_REDE
   Serial.print("Cmd=");
   Serial.print(cmd);
   Serial.print("channelCmd=");
@@ -375,7 +375,7 @@ void Rede::loop()
   // listen for incoming clients
   EthernetClient client = server->available();
   if (client) {
-#ifdef DEBUG
+#ifdef DEBUG_REDE
 //    Serial.println("new client");
 #endif
     // an http request ends with a blank line
@@ -386,14 +386,14 @@ void Rede::loop()
     {
       if (tOut++ > 10)
         break;  // muito tempo connected sem caracter available
-#ifdef DEBUG
+#ifdef DEBUG_REDE
 //Serial.print ("-");
 #endif
       if (client.available()) 
       {
         tOut = 0;
         char c = client.read();
-#ifdef DEBUG
+#ifdef DEBUG_REDE
 //        Serial.write(c);
 #endif
         switch (state)
@@ -431,7 +431,7 @@ void Rede::loop()
               //client.println("valueCmd=");
               //client.println(valueCmd);
               client.println(strResp);
-#ifdef DEBUG1
+#ifdef DEBUG_REDE1
               Serial.print(strResp);
 #endif              
               ////client.println("teste");     
@@ -446,7 +446,7 @@ void Rede::loop()
     delay(10);
     // close the connection:
     client.stop();
-#ifdef DEBUG
+#ifdef DEBUG_REDE
     Serial.println("client disconnected");
 #endif
   }
