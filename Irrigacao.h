@@ -1,5 +1,8 @@
 #include "poco.h"
+#include "levelSensor.h"
+#include "solenoide.h"
 #include "Time.h"
+
 #define PINSOLENOIDEIRRIGACAOLATERAL 33
 #define PINSOLENOIDEIRRIGACAOGRAMA1 31
 #define PINSOLENOIDEIRRIGACAOGRAMA2 29
