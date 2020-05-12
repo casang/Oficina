@@ -1,3 +1,6 @@
+#ifndef SOLENOIDE_H
+#define SOLENOIDE_H
+
 class Solenoide
 {
 	int pinSolenoide;
@@ -8,3 +11,5 @@ public:
     void turnOff ();
     bool isOn ();
 };
+
+#endif
