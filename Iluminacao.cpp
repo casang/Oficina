@@ -22,7 +22,15 @@ bool Iluminacao::isOn ()
 {
   for (int i = 1; i <= DIMMER_CHANNELS; i++)
     if (bOn[i])
+    {
+#ifdef DEBUG_ILUMINACAO
+      Serial.print ("On");
+#endif
       return true;
+    }
+#ifdef DEBUG_ILUMINACAO
+  Serial.print("Off");
+#endif
   return false;
 }
 
@@ -95,7 +103,7 @@ void Iluminacao::loop ()
 
   if (interruptor->changed ())
   {
-#ifdef DEBUG
+#ifdef DEBUG_ILUMINACAO
     Serial.print("int:");
     Serial.print(interruptor->getLightLevel ());
 #endif
