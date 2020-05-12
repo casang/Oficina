@@ -14,13 +14,17 @@
 #include "Rede.h"
 #include "TimeNTP.h"
 #include "Verify.h"
-#include <idDHT11.h>
+#include "oficina_mqtt.h"
 #include "mega.h"
 
 Iluminacao *iluminacao = NULL;
 Irrigacao *irrigacao = NULL;
 Rede *rede = NULL;
 NTP *ntp = NULL;
+oficinaMqtt *mqtt = NULL;
+
+#ifdef DHT11_ON
+
 idDHT11 *dht11 = NULL;
 
 
@@ -74,6 +78,16 @@ void loopDHT11()
   Serial.println(dht11->getCelsius(), 2);
 }
 
+// This wrapper is in charge of calling 
+// mus be defined like this for the lib work
+void dht11_wrapper() {
+  if (dht11)
+    dht11->isrCallback();
+}
+
+
+#endif
+
 void interruptorInt ()
 {
   if (iluminacao && iluminacao->interruptor)
@@ -92,18 +106,18 @@ void zeroCrossInt ()
     iluminacao->dimmer->zeroCrossInterrupt ();
 }
 
-// This wrapper is in charge of calling 
-// mus be defined like this for the lib work
-void dht11_wrapper() {
-  if (dht11)
-    dht11->isrCallback();
-}
-
 void tmInterrupt ()
 {
   acLoadInt ();
   interruptorInt ();
 }
+
+void oficinaMqtt_warpper (String &topic, String &payload) 
+{
+  if (mqtt)
+    mqtt->messageReceived (topic, payload);
+}
+
 
 #define PINBLINK 13
 
@@ -111,12 +125,13 @@ void setup()
 {
   delay (2000); // waiting for stabilization
 
-  Serial.begin (19200);
+  Serial.begin (115200);
   Serial.println ("SanBikes - Oficina.ino");
   pinMode(PINBLINK, OUTPUT);
   iluminacao = new Iluminacao;
   irrigacao = new Irrigacao;
   rede = new Rede;
+  mqtt = new oficinaMqtt;
   //ntp = new NTP;
   //setSyncProvider(getNtpTimeFunc);
   //dht11 = new idDHT11(PINTEMPHUMIDITYSENSOR, digitalPinToInterrupt (PINTEMPHUMIDITYSENSOR),dht11_wrapper);
@@ -146,6 +161,7 @@ void loop ()
   {
     t200m = millis ();
     rede->loop ();
+    mqtt->loop ();
   }
   //loopDHT11 ();
 }
